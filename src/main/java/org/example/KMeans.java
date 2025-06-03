@@ -105,8 +105,22 @@ public class KMeans {
         }
     }
 
+    private double[][] removerElemento(double[][] array, int index) {
+        double[][] novo = new double[array.length - 1][];
+        for (int i = 0, j = 0; i < array.length; i++) {
+            if (i != index) {
+                novo[j++] = array[i];
+            }
+        }
+        return novo;
+    }
+
     public void refinarClusters() {
+        final double DISTANCIA_LIMITE = 20.0;
+        final int MAX_ITERACOES = 20;
+        int iteracao = 0;
         boolean houveMudanca;
+
         do {
             houveMudanca = false;
             List<double[]> pontosADistancia = new ArrayList<>();
@@ -120,7 +134,7 @@ public class KMeans {
                     double[] ponto = it.next();
                     double distancia = Math.abs(ponto[0] - centroide[0]);
 
-                    if (distancia > 20) {
+                    if (distancia > DISTANCIA_LIMITE) {
                         pontosADistancia.add(ponto);
                         it.remove();
                         houveMudanca = true;
@@ -136,9 +150,23 @@ public class KMeans {
                 pontosADistancia.clear();
             }
 
-            updateCentroids();
+            for (int i = clusters.size() - 1; i >= 0; i--) {
+                if (clusters.get(i).isEmpty()) {
+                    clusters.remove(i);
+                    centroids = removerElemento(centroids, i);
+                }
+            }
 
-        } while (houveMudanca);
+            updateCentroids();
+            iteracao++;
+
+            System.out.println("Iteração de refinamento: " + iteracao + " | Total de clusters: " + clusters.size());
+
+        } while (houveMudanca && iteracao < MAX_ITERACOES);
+
+        if (iteracao == MAX_ITERACOES) {
+            System.out.println("Atingido o limite máximo de iterações no refinamento.");
+        }
     }
 
     private double[] calcularNovoCentroide(List<double[]> pontos) {
@@ -191,8 +219,10 @@ public class KMeans {
 
         KMeans kMeans = new KMeans(2);
         kMeans.fit(data);
+        kMeans.printClusters(pessoas, data);
         System.out.println("-----------------Cluster dinamicos----------");
         kMeans.refinarClusters();
+        System.out.println("-----------------Novo Clusters----------");
         kMeans.printClusters(pessoas, data);
 
     }
